@@ -1,6 +1,6 @@
 {
   "name": "ng-pdf-annotator",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Visor de PDF para Angular con anotaciones (resaltar, subrayar, tachar, ondulado, mano alzada, notas), comentarios con respuestas y estados, marcas de agua, bloqueo de descarga/impresión, i18n y tema claro/oscuro. Exporta e importa anotaciones en JSON.",
   "keywords": [
     "angular",

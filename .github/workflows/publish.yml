@@ -1,32 +1,74 @@
 name: Publicar en npm
 
+# Se ejecuta en cada push a main que toque la librería o su documentación.
+# Solo publica si la versión de projects/ng-pdf-annotator/package.json todavía no existe en npm;
+# si ya existe, termina sin hacer nada (npm no permite volver a publicar la misma versión).
 on:
-  release:
-    types: [published]
+  push:
+    branches: [main]
+    paths:
+      - 'projects/ng-pdf-annotator/**'
+      - 'README.md'
+      - 'CHANGELOG.md'
+      - 'LICENSE'
+      - 'docs/**'
+  workflow_dispatch:
 
 permissions:
-  contents: read
-  id-token: write # necesario para --provenance y trusted publishing
+  contents: write # crear la etiqueta y la release en GitHub
+  id-token: write # trusted publishing y --provenance
+
+concurrency:
+  group: publish-npm
+  cancel-in-progress: false
 
 jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
           registry-url: https://registry.npmjs.org
-      - run: npm ci
-      - run: npm test
-      - run: npm run build:lib
-      - name: Verificar que la versión coincide con la etiqueta
+
+      - name: Comprobar si la versión es nueva
+        id: check
         run: |
-          PKG=$(node -p "require('./dist/ng-pdf-annotator/package.json').version")
-          TAG=${GITHUB_REF_NAME#v}
-          if [ "$PKG" != "$TAG" ]; then echo "La versión del paquete ($PKG) no coincide con la etiqueta ($TAG)"; exit 1; fi
-      - run: npm publish --provenance --access public
+          VERSION=$(node -p "require('./projects/ng-pdf-annotator/package.json').version")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if npm view "ng-pdf-annotator@$VERSION" version > /dev/null 2>&1; then
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::La versión $VERSION ya está en npm. Sube la versión (npm run version:lib -- patch) para publicar."
+          else
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+            echo "Se publicará la versión $VERSION"
+          fi
+
+      - if: steps.check.outputs.publish == 'true'
+        run: npm ci
+
+      - if: steps.check.outputs.publish == 'true'
+        run: npm test
+
+      - if: steps.check.outputs.publish == 'true'
+        run: npm run build:lib
+
+      # Trusted publishing necesita npm 11.5.1 o superior.
+      - if: steps.check.outputs.publish == 'true'
+        run: npm install -g npm@latest
+
+      - if: steps.check.outputs.publish == 'true'
+        name: Publicar
+        run: npm publish --provenance --access public
         working-directory: dist/ng-pdf-annotator
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - if: steps.check.outputs.publish == 'true'
+        name: Crear etiqueta y release en GitHub
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "v${{ steps.check.outputs.version }}" --target "$GITHUB_SHA" --title "v${{ steps.check.outputs.version }}" --generate-notes

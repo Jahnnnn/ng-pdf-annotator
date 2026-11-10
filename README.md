@@ -101,7 +101,6 @@ export class RevisionComponent {
 - [API completa: inputs, outputs y métodos](docs/API.md)
 - [Formato JSON y guardado en base de datos](docs/JSON-Y-BASE-DE-DATOS.md)
 - [Personalización: idiomas, temas, marcas de agua, permisos y seguridad](docs/PERSONALIZACION.md)
-- [Desarrollo, GitHub y publicación en npm](docs/PUBLICAR.md)
 
 ## Atajos de teclado
 
