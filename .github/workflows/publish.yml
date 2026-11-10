@@ -1,0 +1,32 @@
+name: Publicar en npm
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  id-token: write # necesario para --provenance y trusted publishing
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          registry-url: https://registry.npmjs.org
+      - run: npm ci
+      - run: npm test
+      - run: npm run build:lib
+      - name: Verificar que la versión coincide con la etiqueta
+        run: |
+          PKG=$(node -p "require('./dist/ng-pdf-annotator/package.json').version")
+          TAG=${GITHUB_REF_NAME#v}
+          if [ "$PKG" != "$TAG" ]; then echo "La versión del paquete ($PKG) no coincide con la etiqueta ($TAG)"; exit 1; fi
+      - run: npm publish --provenance --access public
+        working-directory: dist/ng-pdf-annotator
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

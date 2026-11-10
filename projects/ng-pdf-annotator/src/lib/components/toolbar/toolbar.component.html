@@ -1,0 +1,236 @@
+@let t = store.t();
+@let tb = store.toolbar();
+
+<div class="npa-tb__group">
+  @if (tb.leftPanel) {
+    <button
+      type="button"
+      class="npa-icon-btn"
+      [class.npa-icon-btn--active]="store.leftPanelOpen()"
+      [title]="t.toolbar.leftPanel"
+      [attr.aria-label]="t.toolbar.leftPanel"
+      [attr.aria-pressed]="store.leftPanelOpen()"
+      (click)="store.leftPanelOpen.set(!store.leftPanelOpen())"
+    >
+      <npa-icon name="panel" />
+    </button>
+  }
+
+  @if (tb.pageNavigation) {
+    <div class="npa-tb__pages">
+      <button
+        type="button"
+        class="npa-icon-btn npa-hide-sm"
+        [title]="t.toolbar.previousPage"
+        [disabled]="store.currentPage() <= 1"
+        (click)="store.goToPage(store.currentPage() - 1)"
+      >
+        <npa-icon name="chevron-up" />
+      </button>
+      <input
+        class="npa-input npa-input--page"
+        type="text"
+        inputmode="numeric"
+        [attr.aria-label]="t.toolbar.page"
+        [value]="store.currentPage()"
+        (change)="onPageInput($event)"
+        (keydown)="$event.stopPropagation()"
+        (keydown.enter)="onPageInput($event)"
+      />
+      <span class="npa-tb__of">/ {{ store.numPages() }}</span>
+      <button
+        type="button"
+        class="npa-icon-btn npa-hide-sm"
+        [title]="t.toolbar.nextPage"
+        [disabled]="store.currentPage() >= store.numPages()"
+        (click)="store.goToPage(store.currentPage() + 1)"
+      >
+        <npa-icon name="chevron-down" />
+      </button>
+    </div>
+  }
+</div>
+
+@if (tb.zoom) {
+  <div class="npa-tb__group npa-zoom">
+    <button type="button" class="npa-icon-btn" [title]="t.toolbar.zoomOut" [attr.aria-label]="t.toolbar.zoomOut" (click)="store.zoomOut()">
+      <npa-icon name="zoom-out" />
+    </button>
+    <div class="npa-zoom__box">
+      <input
+        class="npa-input npa-input--zoom"
+        type="text"
+        [attr.aria-label]="t.toolbar.zoomValue"
+        [value]="zoomPercent() + '%'"
+        (focus)="$any($event.target).select()"
+        (change)="onZoomInput($event)"
+        (keydown)="$event.stopPropagation()"
+        (keydown.enter)="onZoomInput($event)"
+      />
+      <button
+        type="button"
+        class="npa-icon-btn npa-icon-btn--xs"
+        [attr.aria-label]="t.toolbar.zoomValue"
+        [attr.aria-expanded]="zoomMenuOpen()"
+        (click)="zoomMenuOpen.set(!zoomMenuOpen())"
+      >
+        <npa-icon name="chevron-down" [size]="14" />
+      </button>
+      @if (zoomMenuOpen()) {
+        <div class="npa-menu npa-menu--zoom" role="menu">
+          <button type="button" role="menuitem" class="npa-menu__item" (click)="pickZoom('fit-width')">
+            <npa-icon name="fit-width" [size]="15" /> {{ t.toolbar.fitWidth }}
+            @if (store.zoomMode() === 'fit-width') {
+              <npa-icon name="check" [size]="14" class="npa-menu__check" />
+            }
+          </button>
+          <button type="button" role="menuitem" class="npa-menu__item" (click)="pickZoom('fit-page')">
+            <npa-icon name="fit-page" [size]="15" /> {{ t.toolbar.fitPage }}
+            @if (store.zoomMode() === 'fit-page') {
+              <npa-icon name="check" [size]="14" class="npa-menu__check" />
+            }
+          </button>
+          <div class="npa-menu__sep"></div>
+          @for (z of store.zoomLevels(); track z) {
+            <button type="button" role="menuitem" class="npa-menu__item" (click)="pickZoom(z)">
+              {{ z * 100 }}%
+              @if (!store.zoomMode() && store.zoom() === z) {
+                <npa-icon name="check" [size]="14" class="npa-menu__check" />
+              }
+            </button>
+          }
+        </div>
+      }
+    </div>
+    <button type="button" class="npa-icon-btn" [title]="t.toolbar.zoomIn" [attr.aria-label]="t.toolbar.zoomIn" (click)="store.zoomIn()">
+      <npa-icon name="zoom-in" />
+    </button>
+  </div>
+}
+
+<span class="npa-spacer"></span>
+
+@if (tb.modeSwitch) {
+  <div class="npa-segmented" role="radiogroup">
+    <button
+      type="button"
+      role="radio"
+      class="npa-segmented__btn"
+      [class.npa-segmented__btn--active]="store.mode() === 'view'"
+      [attr.aria-checked]="store.mode() === 'view'"
+      (click)="setMode('view')"
+    >
+      <npa-icon name="eye" [size]="16" /> <span class="npa-hide-sm">{{ t.toolbar.view }}</span>
+    </button>
+    @if (store.canAnnotate()) {
+      <button
+        type="button"
+        role="radio"
+        class="npa-segmented__btn"
+        [class.npa-segmented__btn--active]="store.mode() === 'annotate'"
+        [attr.aria-checked]="store.mode() === 'annotate'"
+        (click)="setMode('annotate')"
+      >
+        <npa-icon name="annotate" [size]="16" /> <span class="npa-hide-sm">{{ t.toolbar.annotate }}</span>
+      </button>
+    }
+  </div>
+}
+
+<span class="npa-spacer"></span>
+
+<div class="npa-tb__group">
+  @if (tb.search) {
+    @if (store.searchOpen()) {
+      <div class="npa-search">
+        <npa-icon name="search" [size]="15" />
+        <input
+          #searchInput
+          type="text"
+          class="npa-search__input"
+          [placeholder]="t.search.placeholder"
+          [value]="store.searchQuery()"
+          (input)="onSearchInput($any($event.target).value)"
+          (keydown)="onSearchKey($event)"
+        />
+        <span class="npa-search__count">
+          @if (store.searching()) {
+            {{ t.search.searching }}
+          } @else if (store.searchQuery() && !store.searchResults().length) {
+            {{ t.search.noResults }}
+          } @else if (store.searchResults().length) {
+            {{ store.tr(t.search.results, { current: store.searchIndex() + 1, total: store.searchResults().length }) }}
+          }
+        </span>
+        <button
+          type="button"
+          class="npa-icon-btn npa-icon-btn--xs"
+          [class.npa-icon-btn--active]="store.searchMatchCase()"
+          [title]="t.search.matchCase"
+          (click)="toggleMatchCase()"
+        >
+          <npa-icon name="case-sensitive" [size]="15" />
+        </button>
+        <button
+          type="button"
+          class="npa-icon-btn npa-icon-btn--xs"
+          [title]="t.search.previous"
+          [disabled]="!store.searchResults().length"
+          (click)="store.goToSearchResult(store.searchIndex() - 1)"
+        >
+          <npa-icon name="chevron-up" [size]="15" />
+        </button>
+        <button
+          type="button"
+          class="npa-icon-btn npa-icon-btn--xs"
+          [title]="t.search.next"
+          [disabled]="!store.searchResults().length"
+          (click)="store.goToSearchResult(store.searchIndex() + 1)"
+        >
+          <npa-icon name="chevron-down" [size]="15" />
+        </button>
+        <button type="button" class="npa-icon-btn npa-icon-btn--xs" [title]="t.search.close" (click)="closeSearch()">
+          <npa-icon name="close" [size]="15" />
+        </button>
+      </div>
+    } @else {
+      <button type="button" class="npa-icon-btn" [title]="t.toolbar.search" [attr.aria-label]="t.toolbar.search" (click)="toggleSearch()">
+        <npa-icon name="search" />
+      </button>
+    }
+  }
+
+  @if (tb.comments) {
+    <button
+      type="button"
+      class="npa-icon-btn"
+      [class.npa-icon-btn--active]="store.commentsOpen()"
+      [title]="t.toolbar.comments"
+      [attr.aria-label]="t.toolbar.comments"
+      [attr.aria-pressed]="store.commentsOpen()"
+      (click)="store.commentsOpen.set(!store.commentsOpen())"
+    >
+      <npa-icon name="comments" />
+      @if (commentCount()) {
+        <span class="npa-count npa-count--float">{{ commentCount() > 99 ? '99+' : commentCount() }}</span>
+      }
+    </button>
+  }
+
+  @if (tb.themeToggle) {
+    <button type="button" class="npa-icon-btn" [title]="t.toolbar.theme" [attr.aria-label]="t.toolbar.theme" (click)="toggleTheme()">
+      <npa-icon [name]="store.theme() === 'dark' ? 'sun' : 'moon'" />
+    </button>
+  }
+
+  @if (tb.languageSelector) {
+    <label class="npa-lang" [title]="t.toolbar.language">
+      <npa-icon name="globe" [size]="16" />
+      <select class="npa-select npa-select--bare" [value]="store.language()" (change)="setLanguage($any($event.target).value)">
+        @for (l of store.availableLanguages(); track l) {
+          <option [value]="l" [selected]="l === store.language()">{{ languageNames[l] ?? l.toUpperCase() }}</option>
+        }
+      </select>
+    </label>
+  }
+</div>

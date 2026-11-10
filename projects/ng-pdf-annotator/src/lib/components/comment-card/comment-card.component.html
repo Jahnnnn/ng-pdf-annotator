@@ -1,0 +1,179 @@
+@let a = annotation();
+@let t = store.t();
+
+<div class="npa-card__head">
+  <span class="npa-avatar" [style.background]="avatarColor(a.author.id)">{{ initials(a.author.name) }}</span>
+  <div class="npa-card__who">
+    <strong>{{ a.author.name }}</strong>
+    <small>
+      {{ store.formatDate(a.createdAt) }}
+      @if (isEdited(a)) {
+        · {{ t.comments.edited }}
+      }
+    </small>
+  </div>
+  <button type="button" class="npa-icon-btn npa-icon-btn--sm" [title]="t.comments.goTo" (click)="goTo($event)">
+    <npa-icon [name]="a.type" [size]="16" [style.color]="a.color" />
+  </button>
+</div>
+
+<div class="npa-card__meta">
+  <span class="npa-dot" [style.background]="a.color"></span>
+  <span>{{ t.annotationTypes[a.type] }}</span>
+  @if (a.status !== 'none') {
+    <span class="npa-status-badge" [attr.data-status]="a.status">{{ store.statusLabel(a.status) }}</span>
+  }
+  @if (a.marked === 'marked') {
+    <span class="npa-status-badge" data-status="marked">{{ store.statusLabel('marked') }}</span>
+  }
+</div>
+
+@if (quote()) {
+  <blockquote class="npa-card__quote" [style.border-color]="a.color">{{ quote() }}</blockquote>
+}
+
+@if (editingMain()) {
+  <textarea
+    class="npa-textarea"
+    rows="3"
+    [value]="editDraft()"
+    (input)="editDraft.set($any($event.target).value)"
+    (click)="$event.stopPropagation()"
+    (keydown)="onMainKey($event)"
+  ></textarea>
+  <div class="npa-row npa-row--end" (click)="$event.stopPropagation()">
+    <button type="button" class="npa-btn npa-btn--ghost" (click)="editingMain.set(false)">{{ t.comments.cancel }}</button>
+    <button type="button" class="npa-btn npa-btn--primary" (click)="saveMain()">{{ t.comments.save }}</button>
+  </div>
+} @else if (a.contents) {
+  <p class="npa-card__text">{{ a.contents }}</p>
+}
+
+@if (lastStatus(); as st) {
+  <div class="npa-card__status-line">
+    <span class="npa-status-dot" [attr.data-status]="st.status"></span>
+    {{ store.tr(t.comments.statusChangedBy, { user: st.author.name, status: store.statusLabel(st.status) }) }}
+    · {{ store.formatDate(st.date) }}
+  </div>
+}
+
+@if (confirmId() === a.id) {
+  <div class="npa-confirm" (click)="$event.stopPropagation()">
+    <span>{{ t.comments.confirmDelete }}</span>
+    <div class="npa-row npa-row--end">
+      <button type="button" class="npa-btn npa-btn--ghost" (click)="confirmId.set(null)">{{ t.comments.cancel }}</button>
+      <button type="button" class="npa-btn npa-btn--danger" (click)="confirmDelete()">{{ t.comments.delete }}</button>
+    </div>
+  </div>
+}
+
+<div class="npa-card__actions" (click)="$event.stopPropagation()">
+  <npa-status-menu [annotation]="a" />
+  <span class="npa-spacer"></span>
+  @if (store.canEdit(a) && !editingMain()) {
+    <button type="button" class="npa-icon-btn npa-icon-btn--sm" [title]="t.comments.edit" (click)="startEditMain($event)">
+      <npa-icon name="edit" [size]="15" />
+    </button>
+  }
+  @if (store.canDelete(a)) {
+    <button
+      type="button"
+      class="npa-icon-btn npa-icon-btn--sm npa-icon-btn--danger"
+      [title]="t.comments.delete"
+      (click)="askDelete($event, a.id)"
+    >
+      <npa-icon name="trash" [size]="15" />
+    </button>
+  }
+</div>
+
+<!-- Respuestas -->
+@if (a.replies.length) {
+  <div class="npa-replies" (click)="$event.stopPropagation()">
+    @if (hiddenReplies() > 0) {
+      <button type="button" class="npa-link" (click)="showReplies.set(true)">
+        {{ t.comments.showReplies }} ({{ hiddenReplies() }})
+      </button>
+    } @else if (a.replies.length > 2) {
+      <button type="button" class="npa-link" (click)="showReplies.set(false)">{{ t.comments.hideReplies }}</button>
+    }
+    @for (r of visibleReplies(); track r.id) {
+      <div class="npa-reply">
+        <span class="npa-avatar npa-avatar--sm" [style.background]="avatarColor(r.author.id)">{{ initials(r.author.name) }}</span>
+        <div class="npa-reply__body">
+          <div class="npa-reply__head">
+            <strong>{{ r.author.name }}</strong>
+            <small>
+              {{ store.formatDate(r.createdAt) }}
+              @if (isEdited(r)) {
+                · {{ t.comments.edited }}
+              }
+            </small>
+            <span class="npa-spacer"></span>
+            @if (store.canEdit(r) && editingReplyId() !== r.id) {
+              <button type="button" class="npa-icon-btn npa-icon-btn--xs" [title]="t.comments.edit" (click)="startEditReply($event, r)">
+                <npa-icon name="edit" [size]="13" />
+              </button>
+            }
+            @if (store.canDelete(r)) {
+              <button
+                type="button"
+                class="npa-icon-btn npa-icon-btn--xs npa-icon-btn--danger"
+                [title]="t.comments.delete"
+                (click)="askDelete($event, r.id)"
+              >
+                <npa-icon name="trash" [size]="13" />
+              </button>
+            }
+          </div>
+          @if (editingReplyId() === r.id) {
+            <textarea
+              class="npa-textarea"
+              rows="2"
+              [value]="editDraft()"
+              (input)="editDraft.set($any($event.target).value)"
+              (keydown)="onReplyEditKey($event, r)"
+            ></textarea>
+            <div class="npa-row npa-row--end">
+              <button type="button" class="npa-btn npa-btn--ghost" (click)="editingReplyId.set(null)">{{ t.comments.cancel }}</button>
+              <button type="button" class="npa-btn npa-btn--primary" (click)="saveReply(r)">{{ t.comments.save }}</button>
+            </div>
+          } @else {
+            <p class="npa-reply__text">{{ r.contents }}</p>
+          }
+          @if (confirmId() === r.id) {
+            <div class="npa-confirm">
+              <span>{{ t.comments.confirmDelete }}</span>
+              <div class="npa-row npa-row--end">
+                <button type="button" class="npa-btn npa-btn--ghost" (click)="confirmId.set(null)">{{ t.comments.cancel }}</button>
+                <button type="button" class="npa-btn npa-btn--danger" (click)="confirmDelete()">{{ t.comments.delete }}</button>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  </div>
+}
+
+@if (store.canReply()) {
+  <div class="npa-reply-box" (click)="$event.stopPropagation()">
+    <textarea
+      class="npa-textarea npa-textarea--reply"
+      rows="1"
+      [placeholder]="t.comments.replyPlaceholder"
+      [value]="replyDraft()"
+      (input)="replyDraft.set($any($event.target).value)"
+      (keydown)="onReplyKey($event)"
+    ></textarea>
+    <button
+      type="button"
+      class="npa-icon-btn npa-icon-btn--primary"
+      [title]="t.comments.reply"
+      [disabled]="!replyDraft().trim()"
+      (click)="sendReply()"
+    >
+      <npa-icon name="reply" [size]="16" />
+    </button>
+  </div>
+}

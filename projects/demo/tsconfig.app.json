@@ -1,0 +1,19 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "types": [],
+    "paths": {
+      "ng-pdf-annotator": [
+        "../ng-pdf-annotator/src/public-api.ts"
+      ]
+    }
+  },
+  "include": [
+    "src/**/*.ts",
+    "../ng-pdf-annotator/src/**/*.ts"
+  ],
+  "exclude": [
+    "src/**/*.spec.ts",
+    "../ng-pdf-annotator/src/**/*.spec.ts"
+  ]
+}

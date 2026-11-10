@@ -1,0 +1,86 @@
+@let t = store.t();
+<header class="npa-panel__header">
+  <h2>
+    {{ t.comments.title }}
+    <span class="npa-count npa-count--muted">{{ total() }}</span>
+  </h2>
+  <button type="button" class="npa-icon-btn" [title]="t.comments.close" (click)="store.commentsOpen.set(false)">
+    <npa-icon name="close" />
+  </button>
+</header>
+
+<div class="npa-panel__filters">
+  <div class="npa-input-wrap">
+    <npa-icon name="search" [size]="15" />
+    <input
+      type="search"
+      class="npa-input"
+      [placeholder]="t.comments.filterSearch"
+      [value]="filterText()"
+      (input)="filterText.set($any($event.target).value)"
+      (keydown)="$event.stopPropagation()"
+    />
+  </div>
+  <div class="npa-row">
+    <select
+      class="npa-select"
+      [attr.aria-label]="t.comments.filterStatus"
+      [value]="filterStatus()"
+      (change)="filterStatus.set($any($event.target).value)"
+    >
+      <option value="all">{{ t.comments.filterStatus }}: {{ t.comments.filterAll }}</option>
+      @for (s of statuses; track s) {
+        <option [value]="s">{{ store.statusLabel(s) }}</option>
+      }
+    </select>
+    <label class="npa-check">
+      <input type="checkbox" [checked]="currentPageOnly()" (change)="currentPageOnly.set($any($event.target).checked)" />
+      {{ t.comments.currentPageOnly }}
+    </label>
+  </div>
+  <div class="npa-row npa-row--end">
+    <button type="button" class="npa-link" (click)="expandAll()">{{ t.comments.expandAll }}</button>
+    <button type="button" class="npa-link" (click)="collapseAll()">{{ t.comments.collapseAll }}</button>
+  </div>
+</div>
+
+<div class="npa-panel__body">
+  @for (g of visibleGroups(); track g.page) {
+    <section class="npa-group" [class.npa-group--current]="g.page === store.currentPage()">
+      <button
+        type="button"
+        class="npa-group__head"
+        [attr.aria-expanded]="isExpanded(g.page)"
+        (click)="toggle(g.page)"
+      >
+        <npa-icon [name]="isExpanded(g.page) ? 'chevron-down' : 'chevron-right'" [size]="16" />
+        <span class="npa-group__title">{{ store.tr(t.comments.page, { page: g.page }) }}</span>
+        <span class="npa-count">{{ g.items.length }}</span>
+        @if (g.replies) {
+          <span class="npa-group__replies"><npa-icon name="reply" [size]="13" /> {{ g.replies }}</span>
+        }
+        <span class="npa-spacer"></span>
+        <span class="npa-group__go" role="link" tabindex="0" [title]="t.comments.goTo" (click)="goToPage($event, g.page)" (keydown.enter)="goToPage($event, g.page)">
+          <npa-icon name="chevron-right" [size]="15" />
+        </span>
+      </button>
+      @if (isExpanded(g.page)) {
+        <div class="npa-group__items">
+          @for (a of g.items; track a.id) {
+            <npa-comment-card [annotation]="a" />
+          }
+        </div>
+      }
+    </section>
+  } @empty {
+    <div class="npa-empty">
+      <npa-icon name="comments" [size]="32" />
+      <p>{{ t.comments.empty }}</p>
+    </div>
+  }
+  @if (groups().length > groupLimit()) {
+    <button type="button" class="npa-btn npa-btn--ghost npa-btn--block" (click)="groupLimit.set(groupLimit() + 25)">
+      {{ t.comments.loadMore }} ({{ groups().length - groupLimit() }})
+    </button>
+  }
+</div>

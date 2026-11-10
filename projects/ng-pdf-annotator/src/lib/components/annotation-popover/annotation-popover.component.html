@@ -1,0 +1,94 @@
+@let a = annotation();
+@let t = store.t();
+<div class="npa-pop__head">
+  <span class="npa-avatar" [style.background]="avatarColor()">{{ initials() }}</span>
+  <div class="npa-pop__who">
+    <strong>{{ a.author.name }}</strong>
+    <small>{{ store.formatDate(a.createdAt) }}</small>
+  </div>
+  <button type="button" class="npa-icon-btn npa-icon-btn--sm" [attr.aria-label]="t.comments.close" (click)="close()">
+    <npa-icon name="close" [size]="16" />
+  </button>
+</div>
+
+<div class="npa-pop__type">
+  <span class="npa-dot" [style.background]="a.color"></span>
+  {{ t.annotationTypes[a.type] }}
+  @if (a.status !== 'none') {
+    <span class="npa-status-badge" [attr.data-status]="a.status">{{ store.statusLabel(a.status) }}</span>
+  }
+  @if (a.marked === 'marked') {
+    <span class="npa-status-badge" data-status="marked">{{ store.statusLabel('marked') }}</span>
+  }
+</div>
+
+@if (editing()) {
+  <textarea
+    #textarea
+    class="npa-textarea"
+    rows="3"
+    [placeholder]="t.comments.commentPlaceholder"
+    (input)="draft.set($any($event.target).value)"
+    (keydown)="onKey($event)"
+  ></textarea>
+  <div class="npa-pop__row npa-pop__row--end">
+    <button type="button" class="npa-btn npa-btn--ghost" (click)="stopEdit()">{{ t.comments.cancel }}</button>
+    <button type="button" class="npa-btn npa-btn--primary" (click)="save()">{{ t.comments.save }}</button>
+  </div>
+} @else {
+  @if (a.contents) {
+    <p class="npa-pop__contents">{{ a.contents }}</p>
+  } @else if (canEdit()) {
+    <button type="button" class="npa-link" (click)="startEdit()">+ {{ t.comments.addComment }}</button>
+  }
+}
+
+@if (canEdit() && !editing() && a.type !== 'note') {
+  <div class="npa-pop__colors">
+    @for (c of store.palette(); track c) {
+      <button
+        type="button"
+        class="npa-swatch npa-swatch--sm"
+        [style.background]="c"
+        [class.npa-swatch--active]="c.toLowerCase() === a.color.toLowerCase()"
+        [attr.aria-label]="c"
+        (click)="setColor(c)"
+      ></button>
+    }
+  </div>
+}
+
+@if (confirmDelete()) {
+  <div class="npa-confirm">
+    <span>{{ t.comments.confirmDelete }}</span>
+    <div class="npa-pop__row npa-pop__row--end">
+      <button type="button" class="npa-btn npa-btn--ghost" (click)="confirmDelete.set(false)">{{ t.comments.cancel }}</button>
+      <button type="button" class="npa-btn npa-btn--danger" (click)="remove()">{{ t.comments.delete }}</button>
+    </div>
+  </div>
+} @else {
+  <div class="npa-pop__actions">
+    <button type="button" class="npa-icon-btn" [title]="t.toolbar.comments" (click)="openInPanel()">
+      <npa-icon name="comments" [size]="16" />
+      @if (a.replies.length) {
+        <span class="npa-count">{{ a.replies.length }}</span>
+      }
+    </button>
+    @if (canEdit() && a.contents && !editing()) {
+      <button type="button" class="npa-icon-btn" [title]="t.comments.edit" (click)="startEdit()">
+        <npa-icon name="edit" [size]="16" />
+      </button>
+    }
+    <npa-status-menu [annotation]="a" />
+    <span class="npa-spacer"></span>
+    @if (canDelete()) {
+      <button type="button" class="npa-icon-btn npa-icon-btn--danger" [title]="t.comments.delete" (click)="confirmDelete.set(true)">
+        <npa-icon name="trash" [size]="16" />
+      </button>
+    } @else {
+      <span class="npa-icon-btn npa-icon-btn--disabled" [title]="t.comments.noPermission">
+        <npa-icon name="lock" [size]="15" />
+      </span>
+    }
+  </div>
+}

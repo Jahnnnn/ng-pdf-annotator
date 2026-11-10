@@ -1,0 +1,98 @@
+:host {
+  position: absolute;
+  z-index: 20;
+  width: 272px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--npa-surface);
+  color: var(--npa-text);
+  border: 1px solid var(--npa-border);
+  border-radius: 10px;
+  box-shadow: var(--npa-shadow-lg);
+  font-size: 13px;
+  cursor: default;
+  user-select: text;
+}
+
+:host(.npa-popover--above) {
+  transform: translateY(-100%);
+}
+
+.npa-pop__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.npa-pop__who {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.npa-pop__who strong {
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.npa-pop__who small {
+  color: var(--npa-text-muted);
+  font-size: 11px;
+}
+
+.npa-pop__type {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  color: var(--npa-text-muted);
+  font-size: 12px;
+}
+
+.npa-pop__contents {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 140px;
+  overflow: auto;
+  line-height: 1.4;
+}
+
+.npa-pop__row {
+  display: flex;
+  gap: 6px;
+}
+
+.npa-pop__row--end {
+  justify-content: flex-end;
+}
+
+.npa-pop__colors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.npa-pop__actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  border-top: 1px solid var(--npa-border);
+  padding-top: 6px;
+  margin: 0 -4px;
+}
+
+.npa-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 8px;
+  background: var(--npa-danger-soft);
+  font-size: 12px;
+}

@@ -1,0 +1,58 @@
+@let t = store.t();
+<npa-toolbar (languageChange)="onToolbarLanguage($event)" (themeChange)="onToolbarTheme($event)" />
+
+@if (store.mode() === 'annotate' && store.canAnnotate()) {
+  <npa-annotate-bar />
+}
+
+<div class="npa-main">
+  @if (store.leftPanelOpen() && store.toolbar().leftPanel) {
+    <aside class="npa-side npa-side--left" [attr.aria-label]="t.toolbar.leftPanel">
+      <npa-left-panel />
+    </aside>
+  }
+
+  <div
+    #viewport
+    class="npa-viewport"
+    tabindex="0"
+    (scroll)="onScroll()"
+    (mouseup)="onMouseUp()"
+    (touchend)="onMouseUp()"
+  >
+    @if (store.loading()) {
+      <div class="npa-state">
+        <span class="npa-spinner"></span>
+        <p>{{ t.messages.loading }}</p>
+      </div>
+    } @else if (store.error(); as err) {
+      <div class="npa-state npa-state--error">
+        <npa-icon name="lock" [size]="32" />
+        <p>{{ err }}</p>
+      </div>
+    } @else if (!store.numPages()) {
+      <div class="npa-state">
+        <p>{{ t.messages.noDocument }}</p>
+      </div>
+    }
+
+    <div class="npa-pages">
+      @for (p of pages(); track p) {
+        <npa-page [pageNumber]="p" />
+      }
+    </div>
+  </div>
+
+  @if (store.commentsOpen() && store.toolbar().comments) {
+    <aside class="npa-side npa-side--right" [attr.aria-label]="t.comments.title">
+      <npa-comments-panel />
+    </aside>
+  }
+</div>
+
+@if (toast(); as msg) {
+  <div class="npa-toast" role="status">
+    <npa-icon name="lock" [size]="16" />
+    {{ msg }}
+  </div>
+}

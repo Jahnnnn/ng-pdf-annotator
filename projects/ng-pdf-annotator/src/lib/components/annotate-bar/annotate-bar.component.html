@@ -1,0 +1,131 @@
+@let t = store.t();
+<div class="npa-ab__tools">
+  @for (tool of tools; track tool) {
+    @if (tool === 'freehand' || tool === 'note') {
+      <span class="npa-ab__sep"></span>
+    }
+    <button
+      type="button"
+      class="npa-icon-btn npa-ab__tool"
+      [class.npa-icon-btn--active]="store.activeTool() === tool"
+      [attr.aria-pressed]="store.activeTool() === tool"
+      [title]="label(tool)"
+      [attr.aria-label]="label(tool)"
+      (click)="pick(tool)"
+    >
+      <npa-icon [name]="icon(tool)" [size]="19" />
+      @if (tool !== 'select' && store.activeTool() === tool) {
+        <span class="npa-ab__underline" [style.background]="store.toolStyles()[tool].color"></span>
+      }
+    </button>
+  }
+</div>
+
+@if (style(); as st) {
+  <span class="npa-ab__sep"></span>
+  <div class="npa-ab__palette" role="radiogroup" [attr.aria-label]="t.tools.color">
+    @for (c of store.palette(); track c) {
+      <button
+        type="button"
+        role="radio"
+        class="npa-swatch"
+        [style.background]="c"
+        [class.npa-swatch--active]="c.toLowerCase() === st.color.toLowerCase()"
+        [attr.aria-checked]="c.toLowerCase() === st.color.toLowerCase()"
+        [attr.aria-label]="c"
+        (click)="setStyle({ color: c })"
+      ></button>
+    }
+    <label class="npa-swatch npa-swatch--custom" [title]="t.tools.customColor">
+      <npa-icon name="palette" [size]="14" />
+      <input type="color" [value]="st.color" (input)="setStyle({ color: $any($event.target).value })" />
+    </label>
+  </div>
+
+  <div class="npa-brush">
+    <button
+      type="button"
+      class="npa-icon-btn npa-brush__btn"
+      [class.npa-icon-btn--active]="brushOpen()"
+      [title]="t.tools.brush"
+      [attr.aria-expanded]="brushOpen()"
+      (click)="toggleBrush($event)"
+    >
+      <svg width="34" height="18" viewBox="0 0 34 18" aria-hidden="true">
+        <path
+          d="M3 12 C 10 2, 18 16, 31 6"
+          fill="none"
+          stroke-linecap="round"
+          [attr.stroke]="st.color"
+          [attr.stroke-opacity]="st.opacity"
+          [attr.stroke-width]="isInk() ? (st.strokeWidth > 10 ? 10 : st.strokeWidth < 1.5 ? 1.5 : st.strokeWidth) : 3"
+        />
+      </svg>
+      <npa-icon name="chevron-down" [size]="13" />
+    </button>
+    @if (brushOpen()) {
+      <div class="npa-menu npa-brush__menu" [style.top.px]="brushPos().top" [style.left.px]="brushPos().left">
+        <div class="npa-menu__title">{{ t.tools.brush }} · {{ label(store.activeTool()) }}</div>
+        <div class="npa-brush__preview">
+          <svg viewBox="0 0 200 50" preserveAspectRatio="none" aria-hidden="true">
+            <path
+              d="M10 30 C 50 0, 90 50, 130 20 S 180 30, 190 22"
+              fill="none"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              [attr.stroke]="st.color"
+              [attr.stroke-opacity]="st.opacity"
+              [attr.stroke-width]="isInk() ? st.strokeWidth : 6"
+            />
+          </svg>
+        </div>
+        @if (isInk()) {
+          <label class="npa-range">
+            <span>{{ t.tools.thickness }} <b>{{ st.strokeWidth }} pt</b></span>
+            <input
+              type="range"
+              min="1"
+              [max]="maxWidth()"
+              step="0.5"
+              [value]="st.strokeWidth"
+              (input)="setStyle({ strokeWidth: +$any($event.target).value })"
+            />
+          </label>
+        }
+        <label class="npa-range">
+          <span>{{ t.tools.opacity }} <b>{{ (st.opacity * 100).toFixed(0) }}%</b></span>
+          <input
+            type="range"
+            min="0.1"
+            max="1"
+            step="0.05"
+            [value]="st.opacity"
+            (input)="setStyle({ opacity: +$any($event.target).value })"
+          />
+        </label>
+        <div class="npa-menu__title">{{ t.tools.color }}</div>
+        <div class="npa-brush__colors">
+          @for (c of store.palette(); track c) {
+            <button
+              type="button"
+              class="npa-swatch"
+              [style.background]="c"
+              [class.npa-swatch--active]="c.toLowerCase() === st.color.toLowerCase()"
+              [attr.aria-label]="c"
+              (click)="setStyle({ color: c })"
+            ></button>
+          }
+          <label class="npa-swatch npa-swatch--custom" [title]="t.tools.customColor">
+            <npa-icon name="palette" [size]="14" />
+            <input type="color" [value]="st.color" (input)="setStyle({ color: $any($event.target).value })" />
+          </label>
+        </div>
+      </div>
+    }
+  </div>
+}
+
+<span class="npa-spacer"></span>
+@if (hint()) {
+  <span class="npa-ab__hint">{{ hint() }}</span>
+}

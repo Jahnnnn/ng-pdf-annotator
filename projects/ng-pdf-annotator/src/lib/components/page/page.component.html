@@ -1,0 +1,175 @@
+<canvas #canvas class="npa-page__canvas" width="0" height="0" draggable="false" aria-hidden="true"></canvas>
+@if (!rendered()) {
+  <div class="npa-page__placeholder"><span class="npa-spinner"></span></div>
+}
+<div #textLayer class="textLayer"></div>
+
+<svg
+  #svg
+  class="npa-page__overlay"
+  [attr.viewBox]="'0 0 ' + size().width + ' ' + size().height"
+  preserveAspectRatio="none"
+  (pointerdown)="onPointerDown($event)"
+  (pointermove)="onPointerMove($event)"
+  (pointerup)="onPointerUp()"
+  (pointercancel)="onPointerUp()"
+>
+  <!-- Resultados de búsqueda -->
+  @for (hit of searchHits(); track hit.index) {
+    @for (r of hit.rects; track $index) {
+      <rect
+        class="npa-search-hit"
+        [class.npa-search-hit--current]="hit.index === store.searchIndex()"
+        [attr.x]="r.x - 1"
+        [attr.y]="r.y - 1"
+        [attr.width]="r.width + 2"
+        [attr.height]="r.height + 2"
+        rx="1.5"
+      />
+    }
+  }
+
+  <!-- Anotaciones -->
+  @for (a of annotations(); track a.id) {
+    <g class="npa-ann" [attr.data-id]="a.id" (click)="onAnnotationClick($event, a)">
+      <title>{{ tooltip(a) }}</title>
+      @switch (a.type) {
+        @case ('highlight') {
+          @for (r of a.rects; track $index) {
+            <rect
+              class="npa-ann__hl"
+              [attr.x]="r.x"
+              [attr.y]="r.y"
+              [attr.width]="r.width"
+              [attr.height]="r.height"
+              [attr.fill]="a.color"
+              [attr.fill-opacity]="a.opacity"
+            />
+          }
+        }
+        @case ('underline') {
+          @for (r of a.rects; track $index) {
+            <rect class="npa-ann__hit" [attr.x]="r.x" [attr.y]="r.y" [attr.width]="r.width" [attr.height]="r.height" />
+            <line
+              [attr.x1]="r.x"
+              [attr.x2]="r.x + r.width"
+              [attr.y1]="r.y + r.height - strokeFor(r.height)"
+              [attr.y2]="r.y + r.height - strokeFor(r.height)"
+              [attr.stroke]="a.color"
+              [attr.stroke-opacity]="a.opacity"
+              [attr.stroke-width]="strokeFor(r.height)"
+            />
+          }
+        }
+        @case ('strikeout') {
+          @for (r of a.rects; track $index) {
+            <rect class="npa-ann__hit" [attr.x]="r.x" [attr.y]="r.y" [attr.width]="r.width" [attr.height]="r.height" />
+            <line
+              [attr.x1]="r.x"
+              [attr.x2]="r.x + r.width"
+              [attr.y1]="r.y + r.height * 0.55"
+              [attr.y2]="r.y + r.height * 0.55"
+              [attr.stroke]="a.color"
+              [attr.stroke-opacity]="a.opacity"
+              [attr.stroke-width]="strokeFor(r.height)"
+            />
+          }
+        }
+        @case ('squiggly') {
+          @for (r of a.rects; track $index) {
+            <rect class="npa-ann__hit" [attr.x]="r.x" [attr.y]="r.y" [attr.width]="r.width" [attr.height]="r.height" />
+            <path
+              [attr.d]="squiggle(r)"
+              fill="none"
+              [attr.stroke]="a.color"
+              [attr.stroke-opacity]="a.opacity"
+              [attr.stroke-width]="strokeFor(r.height)"
+            />
+          }
+        }
+        @case ('freehand') {
+          @for (p of a.paths; track $index) {
+            <path class="npa-ann__ink-hit" [attr.d]="inkPath(p)" [attr.stroke-width]="a.strokeWidth + 8" />
+            <path
+              class="npa-ann__ink"
+              [attr.d]="inkPath(p)"
+              [attr.stroke]="a.color"
+              [attr.stroke-opacity]="a.opacity"
+              [attr.stroke-width]="a.strokeWidth"
+            />
+          }
+        }
+        @case ('freehandHighlight') {
+          @for (p of a.paths; track $index) {
+            <path class="npa-ann__ink-hit" [attr.d]="inkPath(p)" [attr.stroke-width]="a.strokeWidth + 4" />
+            <path
+              class="npa-ann__ink npa-ann__ink--hl"
+              [attr.d]="inkPath(p)"
+              [attr.stroke]="a.color"
+              [attr.stroke-opacity]="a.opacity"
+              [attr.stroke-width]="a.strokeWidth"
+            />
+          }
+        }
+        @case ('note') {
+          <g class="npa-ann__note" [attr.transform]="'translate(' + a.position.x + ' ' + a.position.y + ')'">
+            <path
+              [attr.d]="'M1 1h' + (noteSize - 2) + 'v' + (noteSize - 8) + 'l-6 6H1z'"
+              [attr.fill]="a.color"
+              stroke="rgba(0,0,0,.45)"
+              stroke-width="0.8"
+            />
+            <path
+              [attr.d]="'M' + (noteSize - 7) + ' ' + (noteSize - 1) + 'v-6h6'"
+              fill="rgba(0,0,0,.18)"
+              stroke="rgba(0,0,0,.45)"
+              stroke-width="0.8"
+            />
+            <path d="M5 7h12M5 11h12M5 15h7" stroke="rgba(0,0,0,.55)" stroke-width="1.2" stroke-linecap="round" />
+            @if (a.replies.length) {
+              <circle [attr.cx]="noteSize - 1" cy="1" r="5" class="npa-ann__badge" />
+              <text [attr.x]="noteSize - 1" y="3.2" class="npa-ann__badge-text">{{ a.replies.length }}</text>
+            }
+          </g>
+        }
+      }
+    </g>
+  }
+
+  <!-- Trazo en curso -->
+  @if (drawing() && drawingStyle(); as st) {
+    <path
+      class="npa-ann__ink"
+      [class.npa-ann__ink--hl]="store.activeTool() === 'freehandHighlight'"
+      [attr.d]="drawingPath()"
+      [attr.stroke]="st.color"
+      [attr.stroke-opacity]="st.opacity"
+      [attr.stroke-width]="st.strokeWidth"
+    />
+  }
+
+  <!-- Marco de la anotación seleccionada -->
+  @if (selected(); as sel) {
+    @let box = selectionBox(sel);
+    <rect
+      class="npa-selection"
+      [attr.x]="box.x"
+      [attr.y]="box.y"
+      [attr.width]="box.width"
+      [attr.height]="box.height"
+      rx="2"
+    />
+  }
+</svg>
+
+@if (selected(); as sel) {
+  @let box = selectionBox(sel);
+  <npa-annotation-popover
+    [annotation]="sel"
+    [anchorX]="box.x * store.cssScale()"
+    [anchorTop]="box.y * store.cssScale()"
+    [anchorBottom]="(box.y + box.height) * store.cssScale()"
+    [pageWidth]="cssWidth()"
+    [pageHeight]="cssHeight()"
+  />
+}

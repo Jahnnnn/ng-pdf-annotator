@@ -1,0 +1,107 @@
+<div class="demo" [attr.data-theme]="theme()">
+  <aside class="demo__side">
+    <header>
+      <h1>ng-pdf-annotator</h1>
+      <p>Demo interactiva</p>
+    </header>
+
+    <label>
+      Usuario actual
+      <select (change)="setUser($any($event.target).value)">
+        @for (u of users; track u.id) {
+          <option [value]="u.id" [selected]="u.id === user().id">{{ u.name }}</option>
+        }
+      </select>
+    </label>
+    <small class="hint">Cambia de usuario para comprobar que solo el autor puede eliminar sus anotaciones.</small>
+
+    <label>
+      Idioma
+      <select [value]="language()" (change)="language.set($any($event.target).value)">
+        <option value="es">Español</option>
+        <option value="en">English</option>
+        <option value="pt">Português</option>
+        <option value="fr">Français (personalizado)</option>
+      </select>
+    </label>
+
+    <label>
+      Tema
+      <select [value]="theme()" (change)="theme.set($any($event.target).value)">
+        <option value="light">Claro</option>
+        <option value="dark">Oscuro</option>
+        <option value="auto">Automático (sistema)</option>
+      </select>
+    </label>
+
+    <label>
+      Marca de agua
+      <select [value]="watermarkMode()" (change)="watermarkMode.set($any($event.target).value)">
+        <option value="none">Sin marca de agua</option>
+        <option value="horizontal">Horizontal</option>
+        <option value="vertical">Vertical</option>
+        <option value="diagonal">Diagonal</option>
+        <option value="tiled">Mosaico (todo el documento)</option>
+      </select>
+    </label>
+    <label>
+      Texto de la marca
+      <input [value]="watermarkText()" (change)="watermarkText.set($any($event.target).value)" />
+    </label>
+
+    <label class="check">
+      <input type="checkbox" [checked]="deleteOwnOnly()" (change)="deleteOwnOnly.set($any($event.target).checked)" />
+      Solo el autor elimina/edita
+    </label>
+    <label class="check">
+      <input type="checkbox" [checked]="readOnly()" (change)="readOnly.set($any($event.target).checked)" />
+      Solo lectura
+    </label>
+    <label class="check">
+      <input type="checkbox" [checked]="blockCopy()" (change)="blockCopy.set($any($event.target).checked)" />
+      Bloquear copiar texto
+    </label>
+
+    <div class="actions">
+      <label class="btn">
+        Abrir PDF…
+        <input type="file" accept="application/pdf" hidden (change)="openPdf($event)" />
+      </label>
+      <button type="button" class="btn" (click)="toggleJson()">{{ showJson() ? 'Ocultar' : 'Ver' }} JSON</button>
+      <button type="button" class="btn" (click)="downloadJson()">Exportar JSON</button>
+      <label class="btn">
+        Importar JSON…
+        <input type="file" accept="application/json" hidden (change)="importJson($event)" />
+      </label>
+      <button type="button" class="btn btn--danger" (click)="reset()">Borrar todo</button>
+    </div>
+
+    @if (lastEvent()) {
+      <div class="event"><b>Último evento:</b> {{ lastEvent() }}</div>
+    }
+  </aside>
+
+  <main class="demo__main">
+    <ng-pdf-annotator
+      [src]="src()"
+      [documentId]="documentId()"
+      [user]="user()"
+      [annotations]="annotations()"
+      [language]="language()"
+      [translations]="translations"
+      [theme]="theme()"
+      [watermark]="watermark()"
+      [permissions]="permissions()"
+      [security]="security()"
+      [readOnly]="readOnly()"
+      [toolbar]="{ themeToggle: true, languageSelector: true }"
+      [showComments]="true"
+      (annotationChange)="onChange($event)"
+      (languageChange)="language.set($event)"
+      (themeChange)="theme.set($event)"
+    />
+    @if (showJson()) {
+      <pre class="json">{{ json() }}</pre>
+    }
+  </main>
+</div>

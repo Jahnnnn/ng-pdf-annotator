@@ -1,0 +1,40 @@
+{
+  "name": "ng-pdf-annotator",
+  "version": "0.1.0",
+  "description": "Visor de PDF para Angular con anotaciones (resaltar, subrayar, tachar, ondulado, mano alzada, notas), comentarios con respuestas y estados, marcas de agua, bloqueo de descarga/impresión, i18n y tema claro/oscuro. Exporta e importa anotaciones en JSON.",
+  "keywords": [
+    "angular",
+    "pdf",
+    "pdf-viewer",
+    "pdf-annotation",
+    "annotations",
+    "comments",
+    "highlight",
+    "watermark",
+    "pdfjs",
+    "ngx",
+    "standalone",
+    "signals"
+  ],
+  "license": "MIT",
+  "author": "Jhon Deiby Godoy Castillo",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Jahnnnn/ng-pdf-annotator.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Jahnnnn/ng-pdf-annotator/issues"
+  },
+  "homepage": "https://github.com/Jahnnnn/ng-pdf-annotator#readme",
+  "peerDependencies": {
+    "@angular/common": ">=20.0.0",
+    "@angular/core": ">=20.0.0",
+    "@angular/platform-browser": ">=20.0.0",
+    "rxjs": "^7.4.0"
+  },
+  "dependencies": {
+    "pdfjs-dist": "^6.5.438",
+    "tslib": "^2.3.0"
+  },
+  "sideEffects": false
+}
